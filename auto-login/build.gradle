@@ -1,0 +1,18 @@
+group 'me.kgustave'
+
+sourceSets {
+    test.java.srcDir "src/test/java"
+
+    test {
+        compileClasspath += main.compileClasspath
+        runtimeClasspath += main.runtimeClasspath
+    }
+}
+
+dependencies {
+    testApt project(":auto-login")
+}
+
+jdaGeneratorSettings {
+    javapoet = true
+}

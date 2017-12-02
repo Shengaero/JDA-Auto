@@ -1,0 +1,161 @@
+/*
+ * Copyright 2017 Kaidan Gustave
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+buildscript {
+    ext {
+        shadow_version = "2.0.1"
+        apt_version = "0.13"
+        kotlin_version = "1.2.0"
+        jda_version = "3.3.1_308"
+        jda_action_version = "1.0.2"
+        javapoet_version = "1.9.0"
+        auto_value_version = "1.5.2"
+        auto_factory_version = "1.0-beta5"
+        auto_service_version = "1.0-rc3"
+    }
+
+    repositories {
+        jcenter()
+        mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+
+    dependencies {
+        classpath "com.github.jengelman.gradle.plugins:shadow:$shadow_version"
+        classpath "net.ltgt.gradle:gradle-apt-plugin:$apt_version"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "gradle.plugin.com.sedmelluq:jdaction:$jda_action_version"
+    }
+}
+
+group 'me.kgustave'
+version '1.0.0'
+
+allprojects {
+    extensions.create("jdaGeneratorSettings", JDAGeneratorExtension)
+    def jdaGen = extensions.getByName("jdaGeneratorSettings") as JDAGeneratorExtension
+
+    apply plugin: 'java'
+    apply plugin: 'idea'
+    apply plugin: 'net.ltgt.apt-idea'
+    apply plugin: 'com.sedmelluq.jdaction'
+    apply plugin: 'com.github.johnrengelman.shadow'
+
+    // Enable kotlin
+    if(jdaGen.kotlinConfig.enable) {
+        apply plugin: 'kotlin'
+        dependencies {
+            compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+
+            if(jdaGen.kotlinConfig.reflect) {
+                compileOnly "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+            }
+        }
+    }
+
+    group 'me.kgustave'
+    // Versions are project specific
+
+    sourceCompatibility = 1.8
+
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+
+    dependencies {
+        if(jdaGen.javapoet) {
+            compile "com.squareup:javapoet:$javapoet_version"
+        }
+
+        if(jdaGen.autoServices.autovalue) {
+            compileOnly "com.google.auto.value:auto-value:$auto_value_version"
+            apt         "com.google.auto.value:auto-value:$auto_value_version"
+        }
+
+        if(jdaGen.autoServices.autofactory) {
+            compileOnly "com.google.auto.factory:auto-factory:$auto_factory_version"
+            apt         "com.google.auto.factory:auto-factory:$auto_factory_version"
+        }
+
+        // Standard Provisions
+        compileOnly "net.dv8tion:JDA:$jda_version"
+        compileOnly "com.google.auto.service:auto-service:$auto_service_version"
+
+        if(project.name != "utils")
+            compile project(":utils")
+
+        // Testing resources
+        testCompile "ch.qos.logback:logback-classic:1.2.3"
+        testCompile 'junit:junit:4.12'
+    }
+
+    idea {
+        module {
+            apt.addGeneratedSourcesDirs = true
+        }
+    }
+
+    build {
+        dependsOn clean
+        dependsOn classes
+        dependsOn javadoc
+        dependsOn shadowJar
+
+        classes.mustRunAfter clean
+        javadoc.mustRunAfter classes
+        shadowJar.mustRunAfter javadoc
+    }
+}
+
+build {
+    childProjects.values().each {
+        it.getTasksByName("build", false).stream().findFirst().ifPresent {
+            dependsOn it
+        }
+    }
+}
+
+wrapper {
+    // Minimum version to support Java 9 is 4.2.1
+    gradleVersion = "4.2.1"
+}
+
+// Configuration container class to handle easy and readable resource configurations
+@SuppressWarnings("GroovyUnusedDeclaration")
+class JDAGeneratorExtension {
+    boolean javapoet = false
+    final Kotlin kotlinConfig = new Kotlin()
+
+    final Google autoServices = new Google()
+
+    void auto(Closure<Google> closure) {
+        autoServices.with(closure)
+    }
+
+    void kotlin(Closure<Kotlin> closure) {
+        kotlinConfig.with(closure)
+    }
+
+    class Google {
+        boolean autovalue = false
+        boolean autofactory = false
+    }
+
+    class Kotlin {
+        boolean enable = false
+        boolean reflect = false
+    }
+}
