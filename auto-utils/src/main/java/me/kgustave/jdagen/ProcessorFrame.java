@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 /**
  * @author Kaidan Gustave
  */
+@SuppressWarnings({"FieldCanBeLocal", "unused", "WeakerAccess"})
 public abstract class ProcessorFrame extends AbstractProcessor
 {
     private Types types;

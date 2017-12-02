@@ -1,5 +1,5 @@
 rootProject.name = 'JDA-Generators'
 include 'auto-listener'
-include 'utils'
+include 'auto-utils'
 include 'auto-login'
 

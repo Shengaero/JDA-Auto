@@ -94,8 +94,8 @@ allprojects {
         compileOnly "net.dv8tion:JDA:$jda_version"
         compileOnly "com.google.auto.service:auto-service:$auto_service_version"
 
-        if(project.name != "utils")
-            compile project(":utils")
+        if(project.name != "auto-utils")
+            compile project(":auto-utils")
 
         // Testing resources
         testCompile "ch.qos.logback:logback-classic:1.2.3"
