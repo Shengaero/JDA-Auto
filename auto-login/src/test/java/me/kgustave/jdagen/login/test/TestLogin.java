@@ -13,14 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.kgustave.autolistener;
+package me.kgustave.jdagen.login.test;
 
-import java.lang.annotation.*;
+import me.kgustave.jdagen.login.JDALogin;
+import net.dv8tion.jda.core.AccountType;
 
 /**
  * @author Kaidan Gustave
  */
-@Documented
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface AutoListener {}
+@JDALogin(AccountType.BOT)
+public class TestLogin
+{
+
+
+
+}

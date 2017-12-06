@@ -33,10 +33,10 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"FieldCanBeLocal", "unused", "WeakerAccess"})
 public abstract class ProcessorFrame extends AbstractProcessor
 {
-    private Types types;
-    private Elements elements;
-    private Filer filer;
-    private Messager messager;
+    protected Types types;
+    protected Elements elements;
+    protected Filer filer;
+    protected Messager messager;
 
     protected final SourceVersion version;
     protected final Set<Class<? extends Annotation>> supported;

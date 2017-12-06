@@ -1,0 +1,14 @@
+version = "1.0"
+
+dependencies {
+    compileOnly project(":auto-listener")
+    apt         project(":auto-listener")
+
+    // Standard Provisions
+    compile "net.dv8tion:JDA:$jda_version"
+    compile "com.google.auto.service:auto-service:$auto_service_version"
+}
+
+compileJava {
+    generatedSourcesDestinationDir = "$buildDir/generated/source/apt/main"
+}
