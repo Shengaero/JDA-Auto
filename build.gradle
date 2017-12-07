@@ -48,6 +48,8 @@ allprojects {
     def jdaGen = extensions.getByName("jdaGeneratorSettings") as JDAGeneratorExtension
 
     apply plugin: 'java'
+    apply plugin: 'idea'
+    apply plugin: 'net.ltgt.apt'
     apply plugin: 'net.ltgt.apt-idea'
     apply plugin: 'com.sedmelluq.jdaction'
     apply plugin: 'com.github.johnrengelman.shadow'
@@ -91,7 +93,9 @@ allprojects {
 
         // Standard Provisions
         compileOnly "net.dv8tion:JDA:$jda_version"
+        apt         "net.dv8tion:JDA:$jda_version"
         compileOnly "com.google.auto.service:auto-service:$auto_service_version"
+        apt         "com.google.auto.service:auto-service:$auto_service_version"
 
         if(project.name != "auto-utils")
             compile project(":auto-utils")

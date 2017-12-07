@@ -6,3 +6,6 @@
 ### Gradle Files ###
 /**/build/
 /.gradle/
+
+### Generated Source Files ###
+/**/src/generated/
