@@ -49,12 +49,6 @@ public final class AutoListenerProcessor extends ProcessorFrame
     }
 
     @Override
-    public synchronized void init(ProcessingEnvironment processingEnv)
-    {
-        super.init(processingEnv);
-    }
-
-    @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
     {
         annotations.forEach(type -> {
@@ -73,51 +67,69 @@ public final class AutoListenerProcessor extends ProcessorFrame
 
     private synchronized void processElement(TypeElement element)
     {
-        messager.printMessage(Diagnostic.Kind.NOTE, String.format("Processing %s", element.getQualifiedName().toString()));
-        AutoListenerGenerator generator = new AutoListenerGenerator(element, elements, messager);
+        AutoListenerGenerator generator = new AutoListenerGenerator(element, elements, messager, types);
+        AutoListener autoListener = element.getAnnotation(AutoListener.class);
 
-        List<ExecutableElement> members = ElementFilter.methodsIn(element.getEnclosedElements());
-
-        for(ExecutableElement ele : members)
+        for(ExecutableElement e : ElementFilter.methodsIn(element.getEnclosedElements()))
         {
-            if(ele.getKind() != ElementKind.METHOD)
-                continue;
-            if(ele.getReturnType().getKind() != TypeKind.VOID)
-                continue;
-            if(!ele.getModifiers().contains(Modifier.PUBLIC))
+            // Never populate private methods
+            if(e.getModifiers().contains(Modifier.STATIC) || e.getModifiers().contains(Modifier.PRIVATE))
                 continue;
 
-            List<? extends VariableElement> params = ele.getParameters();
-
-            // Only methods with one parameter
-            if(params.size() != 1)
-                continue;
-
+            List<? extends VariableElement> params = e.getParameters();
             VariableElement param = params.get(0);
 
-            if(!types.isSubtype(param.asType(), elements.getTypeElement(Event.class.getCanonicalName()).asType()))
+            // We check if it's a method, returns void, has a single parameter,
+            // that the single parameter is a subtype of Event, and that the method
+            // is not annotated with @NoEvent
+            if(e.getKind() != ElementKind.METHOD ||
+               e.getReturnType().getKind() != TypeKind.VOID ||
+               params.size() != 1 ||
+               !types.isSubtype(param.asType(), elements.getTypeElement(Event.class.getCanonicalName()).asType()) ||
+                e.getAnnotation(NoEvent.class) != null)
+            {
+                generator.addNonEventMethod(e);
                 continue;
+            }
 
             Element paramType = types.asElement(param.asType());
+            String packageName = elements.getPackageOf(paramType).getQualifiedName().toString();
+            String className = packageName + "." + paramType.getSimpleName().toString();
 
-            String className = elements.getPackageOf(paramType).getQualifiedName().toString()
-                               +"."+paramType.getSimpleName().toString();
+            // Make sure that this is a valid event
+            if(!packageName.startsWith("net.dv8tion.jda")) {
+                generator.addNonEventMethod(e);
+                messager.printMessage(Diagnostic.Kind.WARNING, "Discovered an event type with a package name other that " +
+                                                               "doesn't correspond to the JDA Library packaging! This " +
+                                                               "behavior is not allowed! If you must have this behavior " +
+                                                               "please apply @NoEvent to "+e.getSimpleName());
+                continue;
+            }
 
             try {
-                generator.addEventElement(Class.forName(className).asSubclass(Event.class), ele);
-            } catch(ClassNotFoundException e) {
+                generator.addEventElement(Class.forName(className).asSubclass(Event.class), e);
+            } catch(ClassNotFoundException ex) {
                 messager.printMessage(Diagnostic.Kind.ERROR, "Could not find Event class for '"+className+"'!");
-            } catch(ClassCastException e) {
-                messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());
+            } catch(ClassCastException ex) {
+                messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage());
             }
         }
 
-        TypeSpec spec = generator.build();
+        // Catch any errors to make sure they're reported correctly.
+        final TypeSpec spec;
+        try {
+            spec = generator.build(autoListener.value().isEmpty()? null : autoListener.value());
+        } catch(Throwable e) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "An error occurred while processing "+
+                                                         element.getSimpleName()+": "+e.getMessage(), element);
+            return;
+        }
 
-        JavaFile.Builder fileBuilder = JavaFile.builder(elements.getPackageOf(element).getQualifiedName().toString(), spec)
-                                               .addFileComment("Generated using JDA-Generators: auto-listener.\n")
-                                               .addFileComment("This file should not be modified.\n")
-                                               .addFileComment("Modifications will be removed upon recompilation!");
+        JavaFile.Builder fileBuilder = JavaFile.builder(elements.getPackageOf(element).getQualifiedName().toString(), spec);
+
+        fileBuilder.addFileComment("Generated using JDA-Generators: auto-listener.\n")
+                   .addFileComment("This file should not be modified.\n")
+                   .addFileComment("Modifications will be removed upon recompilation!");
 
         JavaFile file = fileBuilder.build();
 

@@ -1,4 +1,4 @@
-group 'me.kgustave'
+version '1.0'
 
 jdaGeneratorSettings {
     javapoet = true

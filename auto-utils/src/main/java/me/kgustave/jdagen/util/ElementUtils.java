@@ -96,8 +96,8 @@ public final class ElementUtils
 
         for(ExecutableElement member : ElementFilter.constructorsIn(clazz.getEnclosedElements()))
         {
-            // Only get public constructors
-            if(hasModifier(member, Modifier.PUBLIC))
+            // Only get non-private constructors
+            if(!member.getModifiers().contains(Modifier.PRIVATE))
                 constructors.add(member);
         }
 

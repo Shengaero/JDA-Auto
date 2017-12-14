@@ -29,9 +29,9 @@ public class CommandHandler
     // This method fires when an message is received
     public void onMessageSend(MessageReceivedEvent event)
     {
-        if(event.getMessage().getRawContent().startsWith("!ping"))
+        if(event.getMessage().getContentRaw().startsWith("!ping"))
             handlePing(event);
-        if(event.getMessage().getRawContent().startsWith("!remind"))
+        if(event.getMessage().getContentRaw().startsWith("!remind"))
             handleRemind(event);
     }
 

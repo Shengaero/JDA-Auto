@@ -18,7 +18,7 @@ buildscript {
         shadow_version = "2.0.1"
         apt_version = "0.13"
         kotlin_version = "1.2.0"
-        jda_version = "3.3.1_308"
+        jda_version = "3.3.1_313"
         jda_action_version = "1.0.2"
         javapoet_version = "1.9.0"
         auto_value_version = "1.5.2"
@@ -40,10 +40,7 @@ buildscript {
     }
 }
 
-group 'me.kgustave'
-version '1.0.0'
-
-allprojects {
+subprojects {
     extensions.create("jdaGeneratorSettings", JDAGeneratorExtension)
     def jdaGen = extensions.getByName("jdaGeneratorSettings") as JDAGeneratorExtension
 
@@ -67,7 +64,7 @@ allprojects {
     }
 
     group 'me.kgustave'
-    // Versions are project specific
+    version '1.0.0'
 
     sourceCompatibility = 1.8
 

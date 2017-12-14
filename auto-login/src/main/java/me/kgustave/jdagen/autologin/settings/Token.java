@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.kgustave.jdagen.login.settings;
+package me.kgustave.jdagen.autologin.settings;
 
 import java.lang.annotation.*;
 

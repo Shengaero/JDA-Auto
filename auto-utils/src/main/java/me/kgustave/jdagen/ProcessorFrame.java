@@ -59,6 +59,14 @@ public abstract class ProcessorFrame extends AbstractProcessor
         return supported.stream().map(Class::getCanonicalName).collect(Collectors.toSet());
     }
 
+    /**
+     * Initializer method for the {@link javax.annotation.processing.ProcessingEnvironment ProcessingEnvironment}.
+     *
+     * <p>Overriding methods should call {@code super} to prevent exceptions from being thrown.
+     *
+     * @param  processingEnv
+     *         The Processing environment.
+     */
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv)
     {

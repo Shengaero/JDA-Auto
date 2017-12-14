@@ -13,29 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.kgustave.jdagen.login;
+package me.kgustave.jdagen.autologin;
 
 import com.google.auto.service.AutoService;
+import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.TypeSpec;
 import me.kgustave.jdagen.ProcessorFrame;
-import me.kgustave.jdagen.login.settings.Token;
-import me.kgustave.jdagen.util.ElementUtils;
+import me.kgustave.jdagen.autologin.settings.Token;
+import me.kgustave.jdagen.autologin.subprocessors.TokenProcessor;
 
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
+import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 /**
  * @author Kaidan Gustave
  */
+@SuppressWarnings("unused")
 @AutoService(Processor.class)
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
+@SupportedAnnotationTypes("me.kgustave.jdagen.autologin.JDALogin")
 public final class AutoLoginProcessor extends ProcessorFrame
 {
     private static boolean hasGeneratedLoginClass = false;
@@ -104,37 +110,61 @@ public final class AutoLoginProcessor extends ProcessorFrame
 
         JDALogin login = baseClass.getAnnotation(JDALogin.class);
 
-        LoginClassFrame frame = new LoginClassFrame(login.value(), baseClass);
+        List<Element> members = findRelevantMembers(baseClass);
 
-        List<? extends Element> members = elements.getAllMembers(baseClass);
+        LoginClassFrame frame = new LoginClassFrame(login.value(), baseClass);
+        TokenProcessor tokenProc = new TokenProcessor(elements, types);
 
         for(Element member : members)
         {
-            Token token = member.getAnnotation(Token.class);
-
-            // Member is token marked
-            if(token != null && member.getKind().isField())
-            {
-                // Public field
-                if(member.getModifiers().contains(Modifier.PUBLIC))
-                {
-                    frame.setTokenElement(member);
-                }
-                else // Private field, look for getter
-                {
-                    Element getter = ElementUtils.findGetter(members, member, types);
-                    if(getter == null)
-                    {
-                        messager.printMessage(Diagnostic.Kind.ERROR,
-                            String.format(
-                                "Member of class annotated with @Token (\"%s\") was inaccessible but had no getter!",
-                                member.getSimpleName().toString()));
-                    }
-                    frame.setTokenElement(getter);
-                }
-            }
+            processToken(member, frame, tokenProc);
         }
 
         TypeSpec.Builder builder = TypeSpec.classBuilder("JDALogin");
+
+        frame.buildTypeSpec(builder);
+
+        TypeSpec typeSpec = builder.build();
+
+        JavaFile.Builder fileBuilder = JavaFile.builder(elements.getPackageOf(baseClass)
+                                                                .getQualifiedName().toString(), typeSpec);
+
+        fileBuilder.addFileComment("Generated using JDA-Generators: auto-listener.\n")
+                   .addFileComment("This file should not be modified.\n")
+                   .addFileComment("Modifications will be removed upon recompilation!");
+
+        JavaFile file = fileBuilder.build();
+
+        try {
+            file.writeTo(filer);
+        } catch(IOException e) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "Failed to write "+typeSpec.name+" to file!");
+        }
+    }
+
+    private void processToken(Element element, LoginClassFrame frame, TokenProcessor tokenProc)
+    {
+        // Don't set token twice
+        if(frame.hasTokenElement())
+            return;
+
+        // No @Token annotation
+        if(element.getAnnotation(Token.class) == null)
+            return;
+
+        Element result = tokenProc.process(element);
+
+        if(result != null && !frame.hasTokenElement())
+            frame.setTokenElement(result);
+    }
+
+    private static List<Element> findRelevantMembers(TypeElement clazzElement)
+    {
+        List<Element> relevant = new ArrayList<>();
+
+        relevant.addAll(ElementFilter.fieldsIn(clazzElement.getEnclosedElements()));
+        relevant.addAll(ElementFilter.methodsIn(clazzElement.getEnclosedElements()));
+
+        return relevant;
     }
 }

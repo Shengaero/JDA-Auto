@@ -30,16 +30,31 @@ import java.lang.annotation.*;
  *     <li>The method must return {@code void}.</li>
  *     <li>The method must have a single parameter that is a
  *     subclass of {@link net.dv8tion.jda.core.events.Event Event}.</li>
- *     <li>The method is not marked with a{@link NoEvent @NoEvent}
+ *     <li>The method is not marked with a  {@link NoEvent @NoEvent}
  *     annotation.</li>
  * </ul>
  *
- * <b>Note:</b> The generated source file will have a name in the format  of {@code XListener}
- * where {@code X} is the name of the class that has this annotation applied.
+ * <b>Note:</b> The generated source file will have a name in the format of {@code XListener}
+ * where {@code X} is the name of the class that has this annotation applied, unless
+ * {@link AutoListener#value()} is specified.
  *
+ * @since  1.0
  * @author Kaidan Gustave
  */
 @Documented
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface AutoListener {}
+public @interface AutoListener
+{
+    /**
+     * Target name of the generated source.
+     * <br>Developers may choose to implement this personally to avoid
+     * naming conflicts with previously existing or future resources/classes.
+     * <br>If left unset or provided blank, the generated class will default
+     * to {@code XListener} where {@code X} is the name of the class this
+     * annotation is applied to.
+     *
+     * @return The generated class name, or blank if it's default.
+     */
+    String value() default "";
+}
