@@ -35,6 +35,10 @@ public class CommandHandler
             handleRemind(event);
     }
 
+    void hello(String str)
+    {
+
+    }
 
     // The methods below are ignored because they are private.
 

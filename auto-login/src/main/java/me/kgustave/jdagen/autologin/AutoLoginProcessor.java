@@ -121,6 +121,7 @@ public final class AutoLoginProcessor extends ProcessorFrame
         }
 
         TypeSpec.Builder builder = TypeSpec.classBuilder("JDALogin");
+        builder.addModifiers(Modifier.PUBLIC, Modifier.FINAL);
 
         frame.buildTypeSpec(builder);
 
@@ -129,7 +130,7 @@ public final class AutoLoginProcessor extends ProcessorFrame
         JavaFile.Builder fileBuilder = JavaFile.builder(elements.getPackageOf(baseClass)
                                                                 .getQualifiedName().toString(), typeSpec);
 
-        fileBuilder.addFileComment("Generated using JDA-Generators: auto-listener.\n")
+        fileBuilder.addFileComment("Generated using JDA-Generators: auto-login.\n")
                    .addFileComment("This file should not be modified.\n")
                    .addFileComment("Modifications will be removed upon recompilation!");
 

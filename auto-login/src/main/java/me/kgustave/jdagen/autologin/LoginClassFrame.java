@@ -73,6 +73,9 @@ public class LoginClassFrame
 
         MethodSpec.Builder conBuilder = MethodSpec.constructorBuilder();
 
+        // The constructor should be private
+        conBuilder.addModifiers(Modifier.PRIVATE);
+
         CodeBlock.Builder conCode = CodeBlock.builder();
 
         conCode.add("$T base = new $T", base, base);

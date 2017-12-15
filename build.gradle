@@ -17,7 +17,7 @@ buildscript {
     ext {
         shadow_version = "2.0.1"
         apt_version = "0.13"
-        kotlin_version = "1.2.0"
+        kotlin_version = "1.2.10"
         jda_version = "3.3.1_313"
         jda_action_version = "1.0.2"
         javapoet_version = "1.9.0"
@@ -94,6 +94,7 @@ subprojects {
         compileOnly "com.google.auto.service:auto-service:$auto_service_version"
         apt         "com.google.auto.service:auto-service:$auto_service_version"
 
+        // Make sure not to circularly compile auto-utils to itself
         if(project.name != "auto-utils")
             compile project(":auto-utils")
 
@@ -114,6 +115,7 @@ subprojects {
     }
 
     clean {
+        // Make sure to delete intellij /out/ directory
         doFirst {
             delete("$projectDir/out")
         }

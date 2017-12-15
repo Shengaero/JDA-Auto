@@ -145,6 +145,7 @@ class AutoListenerGenerator
 
                 CodeBlock.Builder code = CodeBlock.builder();
 
+                // Javapoet will generate typeargs for us here
                 code.add("instance = new $T(", get(original.asType()));
 
                 for(int i = 0; i < params.size(); i++)

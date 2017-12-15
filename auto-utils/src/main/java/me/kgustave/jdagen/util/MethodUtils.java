@@ -50,17 +50,11 @@ public final class MethodUtils
         String methodName = method.getSimpleName().toString();
         String fieldName = field.getSimpleName().toString();
 
-        System.out.println(methodName);
-        System.out.println(fieldName);
-
         if(!methodName.startsWith("get"))
             return false;
 
         String methodSuffix = methodName.substring(3);
         String getterSuffix = Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
-
-        System.out.println(methodSuffix);
-        System.out.println(getterSuffix);
 
         return getterSuffix.equals(methodSuffix);
     }

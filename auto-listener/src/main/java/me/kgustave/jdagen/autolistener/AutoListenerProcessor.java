@@ -77,6 +77,13 @@ public final class AutoListenerProcessor extends ProcessorFrame
                 continue;
 
             List<? extends VariableElement> params = e.getParameters();
+
+            // Must have only one param
+            if(params.size() != 1) {
+                generator.addNonEventMethod(e);
+                continue;
+            }
+
             VariableElement param = params.get(0);
 
             // We check if it's a method, returns void, has a single parameter,
