@@ -15,7 +15,7 @@
  */
 package me.kgustave.jdagen.autologin.subprocessors;
 
-import me.kgustave.jdagen.util.MethodUtils;
+import me.kgustave.jdagen.commons.utils.MethodUtils;
 
 import javax.lang.model.element.*;
 import javax.lang.model.util.ElementFilter;

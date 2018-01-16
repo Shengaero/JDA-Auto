@@ -27,5 +27,40 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.SOURCE)
 public @interface JDALogin
 {
-    AccountType value();
+    AccountType type();
+
+    Mode buildMode();
+
+    String loginClassName() default "JDALogin";
+
+    boolean instanceAccessor() default false;
+
+    enum Mode
+    {
+        /**
+         * Constant that causes JDALogin to generate building a {@link net.dv8tion.jda.core.JDA JDA}
+         * instance <b>{@link net.dv8tion.jda.core.JDABuilder#buildBlocking() synchronously}</b>.
+         */
+        BLOCKING,
+
+        /**
+         * Constant that causes JDALogin to generate building a {@link net.dv8tion.jda.core.JDA JDA}
+         * instance <b>{@link net.dv8tion.jda.core.JDABuilder#buildAsync() asynchronously}</b>.
+         */
+        ASYNC
+    }
+
+    /**
+     * Marks a method to be used as the "main" method for the bot.
+     * <br>This method must have one of the following sets of parameters:
+     * <ul>
+     *     <li>{@link net.dv8tion.jda.core.JDA JDA}</li>
+     *     <li>{@code JDA}, {@code String[]}</li>
+     *     <li>{@code JDA}, {@code String...}</li>
+     * </ul>
+     */
+    @Documented
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.SOURCE)
+    @interface Main { }
 }

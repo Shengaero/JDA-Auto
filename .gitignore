@@ -6,6 +6,10 @@
 ### Gradle Files ###
 /**/build/
 /.gradle/
+/gradle.properties/
 
 ### Generated Source Files ###
 /**/src/generated/
+
+### Important or Sensitive Files ###
+/keys/

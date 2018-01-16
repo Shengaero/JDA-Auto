@@ -18,11 +18,12 @@ package me.kgustave.jdagen.examples.autologin;
 import me.kgustave.jdagen.autologin.JDALogin;
 import me.kgustave.jdagen.autologin.settings.Token;
 import net.dv8tion.jda.core.AccountType;
+import net.dv8tion.jda.core.JDA;
 
 /**
  * @author Kaidan Gustave
  */
-@JDALogin(AccountType.BOT)
+@JDALogin(type = AccountType.BOT, buildMode = JDALogin.Mode.ASYNC, loginClassName = "BotLogin")
 public class Bot
 {
     @Token private final String token;
@@ -35,5 +36,11 @@ public class Bot
     public String getToken()
     {
         return token;
+    }
+
+    @JDALogin.Main
+    public void launch(JDA jda)
+    {
+
     }
 }

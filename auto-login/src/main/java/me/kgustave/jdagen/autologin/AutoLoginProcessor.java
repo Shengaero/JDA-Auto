@@ -18,9 +18,12 @@ package me.kgustave.jdagen.autologin;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.TypeSpec;
-import me.kgustave.jdagen.ProcessorFrame;
+import me.kgustave.jdagen.commons.ProcessorFrame;
+import me.kgustave.jdagen.autologin.settings.Listener;
 import me.kgustave.jdagen.autologin.settings.Token;
+import me.kgustave.jdagen.autologin.subprocessors.ListenerProcessor;
 import me.kgustave.jdagen.autologin.subprocessors.TokenProcessor;
+import net.dv8tion.jda.core.JDA;
 
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
@@ -112,15 +115,55 @@ public final class AutoLoginProcessor extends ProcessorFrame
 
         List<Element> members = findRelevantMembers(baseClass);
 
-        LoginClassFrame frame = new LoginClassFrame(login.value(), baseClass);
+        LoginClassFrame frame = new LoginClassFrame(login.type(), baseClass, login);
         TokenProcessor tokenProc = new TokenProcessor(elements, types);
+        ListenerProcessor listenerProc = new ListenerProcessor(elements, types);
 
         for(Element member : members)
         {
             processToken(member, frame, tokenProc);
+            processListeners(member, frame, listenerProc);
+
+            if(member.getAnnotation(JDALogin.Main.class) != null && member instanceof ExecutableElement)
+            {
+                ExecutableElement mainExec = (ExecutableElement)member;
+                if(!mainExec.getModifiers().contains(Modifier.PUBLIC))
+                {
+                    messager.printMessage(Diagnostic.Kind.WARNING, "Could not offer JDA instance to method marked with " +
+                                                                   "@JDALogin.Main due to no public access!");
+                    continue;
+                }
+
+                List<? extends VariableElement> params = mainExec.getParameters();
+
+                if(params.size() < 1 || params.size() > 2)
+                {
+                    messager.printMessage(Diagnostic.Kind.WARNING, "Could not offer JDA instance to method marked with " +
+                                                                   "@JDALogin.Main due to an invalid number of parameters!");
+                    continue;
+                }
+
+                if(params.size() == 1)
+                {
+                    VariableElement param1 = params.get(0);
+
+                    boolean isJDAType = types.isSubtype(param1.asType(),
+                        elements.getTypeElement(JDA.class.getCanonicalName()).asType());
+
+                    if(!isJDAType)
+                    {
+                        messager.printMessage(Diagnostic.Kind.WARNING, "Could not offer JDA instance to method marked with " +
+                                                                       "@JDALogin.Main due to an invalid first parameter " +
+                                                                       "(Should be JDA)!");
+                        continue;
+                    }
+                }
+
+                frame.setMainMethod(mainExec);
+            }
         }
 
-        TypeSpec.Builder builder = TypeSpec.classBuilder("JDALogin");
+        TypeSpec.Builder builder = TypeSpec.classBuilder(login.loginClassName());
         builder.addModifiers(Modifier.PUBLIC, Modifier.FINAL);
 
         frame.buildTypeSpec(builder);
@@ -157,6 +200,19 @@ public final class AutoLoginProcessor extends ProcessorFrame
 
         if(result != null && !frame.hasTokenElement())
             frame.setTokenElement(result);
+    }
+
+    private void processListeners(Element element, LoginClassFrame frame, ListenerProcessor listenerProc)
+    {
+        if(element.getAnnotation(Listener.class) != null)
+        {
+            Element result = listenerProc.process(element);
+
+            if(result != null)
+            {
+                frame.addListener(result);
+            }
+        }
     }
 
     private static List<Element> findRelevantMembers(TypeElement clazzElement)

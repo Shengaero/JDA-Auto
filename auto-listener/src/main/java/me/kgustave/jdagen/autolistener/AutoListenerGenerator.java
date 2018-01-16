@@ -16,7 +16,7 @@
 package me.kgustave.jdagen.autolistener;
 
 import com.squareup.javapoet.*;
-import me.kgustave.jdagen.util.ElementUtils;
+import me.kgustave.jdagen.commons.utils.ElementUtils;
 import net.dv8tion.jda.core.events.Event;
 import net.dv8tion.jda.core.hooks.EventListener;
 

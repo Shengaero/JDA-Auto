@@ -18,7 +18,7 @@ package me.kgustave.jdagen.autolistener;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.TypeSpec;
-import me.kgustave.jdagen.ProcessorFrame;
+import me.kgustave.jdagen.commons.ProcessorFrame;
 import net.dv8tion.jda.core.events.Event;
 
 import javax.annotation.processing.*;

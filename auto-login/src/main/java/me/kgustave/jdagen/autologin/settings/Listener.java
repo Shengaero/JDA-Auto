@@ -13,7 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-jdaAuto {
-    javapoet = true
-    noRelease = true
-}
+package me.kgustave.jdagen.autologin.settings;
+
+import java.lang.annotation.*;
+
+/**
+ * @author Kaidan Gustave
+ */
+@Documented
+@Target({ElementType.FIELD, ElementType.METHOD})
+@Retention(RetentionPolicy.SOURCE)
+public @interface Listener { }

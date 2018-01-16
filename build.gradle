@@ -15,11 +15,8 @@
  */
 buildscript {
     ext {
-        shadow_version = "2.0.1"
-        apt_version = "0.13"
         kotlin_version = "1.2.10"
         jda_version = "3.3.1_313"
-        jda_action_version = "1.0.2"
         javapoet_version = "1.9.0"
         auto_value_version = "1.5.2"
         auto_factory_version = "1.0-beta5"
@@ -33,16 +30,30 @@ buildscript {
     }
 
     dependencies {
-        classpath "com.github.jengelman.gradle.plugins:shadow:$shadow_version"
-        classpath "net.ltgt.gradle:gradle-apt-plugin:$apt_version"
+        classpath "com.github.jengelman.gradle.plugins:shadow:2.0.1"
+        classpath "net.ltgt.gradle:gradle-apt-plugin:0.13"
+        classpath "gradle.plugin.com.sedmelluq:jdaction:1.0.2"
+        classpath "com.github.ben-manes:gradle-versions-plugin:0.17.0"
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "gradle.plugin.com.sedmelluq:jdaction:$jda_action_version"
     }
 }
 
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'com.github.ben-manes.versions'
+
+def bintrayUsername = project.property('bintrayUsername')?.toString()?.trim()
+def bintrayApiKey = project.property('bintrayApiKey')?.toString()?.trim()
+
 subprojects {
-    extensions.create("jdaGeneratorSettings", JDAGeneratorExtension)
-    def jdaGen = extensions.getByName("jdaGeneratorSettings") as JDAGeneratorExtension
+    extensions.create("jdaAuto", JDAAutoExtension)
+    def jdaAuto = extensions.getByName("jdaAuto") as JDAAutoExtension
+
+    project.ext {
+        artifactId = "${rootProject.name.toLowerCase()}-" +
+                "${project.name != 'commons' ? project.name.substring(5).toLowerCase() : project.name.toLowerCase()}"
+    }
 
     apply plugin: 'java'
     apply plugin: 'idea'
@@ -51,13 +62,19 @@ subprojects {
     apply plugin: 'com.sedmelluq.jdaction'
     apply plugin: 'com.github.johnrengelman.shadow'
 
+    if(project.name != 'examples' && !jdaAuto.noRelease) {
+        apply plugin: 'maven-publish'
+        apply plugin: 'com.jfrog.bintray'
+        apply plugin: 'com.github.ben-manes.versions'
+    }
+
     // Enable kotlin
-    if(jdaGen.kotlinConfig.enable) {
+    if(jdaAuto.kotlinConfig.enable) {
         apply plugin: 'kotlin'
         dependencies {
             compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
-            if(jdaGen.kotlinConfig.reflect) {
+            if(jdaAuto.kotlinConfig.reflect) {
                 compileOnly "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
             }
         }
@@ -74,16 +91,16 @@ subprojects {
     }
 
     dependencies {
-        if(jdaGen.javapoet) {
+        if(jdaAuto.javapoet) {
             compile "com.squareup:javapoet:$javapoet_version"
         }
 
-        if(jdaGen.autoServices.autovalue) {
+        if(jdaAuto.autoServices.autovalue) {
             compileOnly "com.google.auto.value:auto-value:$auto_value_version"
             apt         "com.google.auto.value:auto-value:$auto_value_version"
         }
 
-        if(jdaGen.autoServices.autofactory) {
+        if(jdaAuto.autoServices.autofactory) {
             compileOnly "com.google.auto.factory:auto-factory:$auto_factory_version"
             apt         "com.google.auto.factory:auto-factory:$auto_factory_version"
         }
@@ -95,23 +112,70 @@ subprojects {
         apt         "com.google.auto.service:auto-service:$auto_service_version"
 
         // Make sure not to circularly compile auto-utils to itself
-        if(project.name != "auto-utils")
-            compile project(":auto-utils")
+        if(project.name != "commons")
+            compile project(":commons")
 
         // Testing resources
         testCompile "ch.qos.logback:logback-classic:1.2.3"
         testCompile 'junit:junit:4.12'
     }
 
-    build {
-        dependsOn clean
-        dependsOn classes
-        dependsOn javadoc
-        dependsOn shadowJar
+    jar {
+        baseName "$project.artifactId"
+    }
 
-        classes.mustRunAfter clean
-        javadoc.mustRunAfter classes
-        shadowJar.mustRunAfter javadoc
+    javadoc {
+        options.author()
+        options.memberLevel = JavadocMemberLevel.PROTECTED
+        options.encoding = 'UTF-8'
+        options.tags 'apiNote:a:API Note:',
+                     'implSpec:a:Implementation Requirements:',
+                     'implNote:a:Implementation Note:'
+    }
+
+    tasks.create('javadocJar', Jar) {
+        group 'build'
+        description 'Assembles a javadoc jar file.'
+
+        dependsOn javadoc
+
+        from javadoc.destinationDir
+
+        baseName "$project.artifactId"
+        classifier 'javadoc'
+    }
+
+    tasks.create('sourcesJar', Jar) {
+        group 'build'
+        description 'Assembles a sources jar file.'
+
+        dependsOn classes
+
+        from sourceSets.main.allSource
+
+        baseName "$project.artifactId"
+        classifier 'sources'
+    }
+
+    shadowJar {
+        baseName "$project.artifactId"
+        classifier ''
+
+        manifest {
+            attributes 'Implementation-Version': "$project.version",
+                       'Implementation-Title': "$rootProject.name-${project.name.capitalize()}",
+                       'Automatic-Module-Name': "${project.group}.jdagen.${project.name.replaceAll('-', '').toLowerCase()}"
+        }
+    }
+
+    compileJava {
+        options.encoding = "UTF-8"
+    }
+
+    build {
+        dependsOn sourcesJar
+        dependsOn javadocJar
+        dependsOn shadowJar
     }
 
     clean {
@@ -120,11 +184,57 @@ subprojects {
             delete("$projectDir/out")
         }
     }
+
+    publishing {
+        publications {
+            BintrayRelease(MavenPublication) {
+                groupId = project.group
+                artifactId = project.artifactId
+                version = project.version
+                pom.withXml {
+                    def dependenciesNode = asNode().appendNode('dependencies')
+                    // Iterate over the compile dependencies (we don't want the test ones), adding a <dependency> node for each
+                    configurations.compile.allDependencies.each {
+                        def dependencyNode = dependenciesNode.appendNode('dependency')
+                        dependencyNode.appendNode('groupId', it.group)
+                        dependencyNode.appendNode('artifactId', it.name)
+                        dependencyNode.appendNode('version', it.version)
+                    }
+                }
+            }
+        }
+    }
+
+    bintray {
+        user = bintrayUsername
+        key = bintrayApiKey
+        publications = ['BintrayRelease']
+        publish = true
+
+        pkg {
+            repo = 'maven'
+            name = 'JDA-Auto'
+            licenses = ['Apache-2.0']
+            vcsUrl = 'https://github.com/TheMonitorLizard/JDA-Auto'
+            publicDownloadNumbers = true
+            version {
+                name = project.version
+                released = new Date()
+            }
+        }
+    }
+
+    bintrayUpload {
+        dependsOn build
+
+        onlyIf { !bintrayUsername?.empty }
+        onlyIf { !bintrayApiKey?.empty }
+    }
 }
 
 tasks.create("buildAll") {
-    group = "build"
-    description = "Builds all modules"
+    group 'build'
+    description 'Builds all modules'
 
     childProjects.values().each {
         it.getTasksByName("build", false).stream().findFirst().ifPresent {
@@ -134,11 +244,22 @@ tasks.create("buildAll") {
 }
 
 tasks.create("cleanAll") {
-    group = "build"
-    description = "Cleans all modules"
+    group 'build'
+    description 'Cleans all modules'
 
     childProjects.values().each {
         it.getTasksByName("clean", false).stream().findFirst().ifPresent {
+            dependsOn it
+        }
+    }
+}
+
+tasks.create('uploadAll') {
+    group 'publishing'
+    description 'Publishes all modules'
+
+    childProjects.values().each {
+        it.getTasksByName('bintrayUpload', false).stream().findFirst().ifPresent {
             dependsOn it
         }
     }
@@ -151,7 +272,8 @@ wrapper {
 
 // Configuration container class to handle easy and readable resource configurations
 @SuppressWarnings("GroovyUnusedDeclaration")
-class JDAGeneratorExtension {
+class JDAAutoExtension {
+    boolean noRelease = false
     boolean javapoet = false
     final Kotlin kotlinConfig = new Kotlin()
 

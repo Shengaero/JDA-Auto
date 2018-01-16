@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package me.kgustave.jdagen;
+package me.kgustave.jdagen.commons;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
