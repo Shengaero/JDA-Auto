@@ -213,10 +213,17 @@ subprojects {
 
         pkg {
             repo = 'maven'
+
             name = 'JDA-Auto'
+            description = 'Annotation Processors for JDA Projects'
             licenses = ['Apache-2.0']
-            vcsUrl = 'https://github.com/TheMonitorLizard/JDA-Auto'
+
+            githubRepo = 'TheMonitorLizard/JDA-Auto'
+            vcsUrl = 'https://github.com/TheMonitorLizard/JDA-Auto.git'
+            issueTrackerUrl = 'https://github.com/TheMonitorLizard/JDA-Auto/issues'
+
             publicDownloadNumbers = true
+
             version {
                 name = project.version
                 released = new Date()

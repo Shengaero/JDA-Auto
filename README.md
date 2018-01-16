@@ -13,3 +13,34 @@ The projects in this repository are currently all a work in progress.
 
 Highly simplified and intuitive annotation processor that automatically generates
 `EventListener` implementations.
+
+## Download
+
+Downloads are hosted on the [bintray repo](https://bintray.com/kaidangustave/maven/JDA-Auto).
+
+```groovy
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile 'me.kgustave:jda-auto-{MODULE_NAME}:{VERSION}'
+}
+```
+
+```xml
+<repository>
+  <id>central</id>
+  <name>bintray</name>
+  <url>http://jcenter.bintray.com</url>
+</repository>
+```
+
+```xml
+<dependency>
+  <groupId>me.kgustave</groupId>
+  <artifactId>jda-auto-{MODULE_NAME}</artifactId>
+  <version>{VERSION}</version>
+  <type>pom</type>
+</dependency>
+```
